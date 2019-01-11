@@ -74,7 +74,7 @@ type sudog struct {
 ## 创建&初始化chan
 
 
-![map_struct](./chan_1.jpg)
+![map_struct](./images/chan_1.jpg)
 
 ### 实现
 
@@ -132,9 +132,9 @@ c<-1
 
 ##### 发送数据实现
 
-![map_struct](./chan_2.jpg)
+![map_struct](./images/chan_2.jpg)
 
-![map_struct](./chan_3.jpg)
+![map_struct](./images/chan_3.jpg)
 
 ```
 func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
@@ -233,9 +233,9 @@ func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
 
 #### send实现
 
-![map_struct](./map_4.jpg)
+![map_struct](./images/map_4.jpg)
 
-![map_struct](./chan_5.jpg)
+![map_struct](./images/chan_5.jpg)
 ```
 // 执行发送操作:
 // 1. 发送端数据拷贝到接收端。
@@ -300,8 +300,8 @@ func main() {
 }
 ```
 
-![map_struct](./chan_6.jpg)
-![map_struct](./chan_7.jpg)
+![map_struct](./images/chan_6.jpg)
+![map_struct](./images/chan_7.jpg)
 
 #### chanrecv 实现
 
@@ -449,9 +449,9 @@ func chanrecv(c *hchan, ep unsafe.Pointer, block bool) (selected, received bool)
 
 #### recv实现
 
-![map_struct](./chan_8.jpg)
+![map_struct](./images/chan_8.jpg)
 
-![map_struct](./chan_9.jpg)
+![map_struct](./images/chan_9.jpg)
 ```
 // 接收操作分成两个步骤:
 // 1. 发送者通过sg将值发送到channel

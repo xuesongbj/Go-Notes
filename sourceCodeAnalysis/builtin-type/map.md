@@ -88,7 +88,7 @@ type bmap struct {
 } 
 ```
 
-![map_struct](./map_1.jpg)
+![map_struct](./images/map_1.jpg)
 
 
 ## 创建map
@@ -285,7 +285,7 @@ func mapaccess1(t *maptype, h *hmap, key unsafe.Pointer) unsafe.Pointer {
 ```
 
 
-![map_read](./map_2.jpg)
+![map_read](./images/map_2.jpg)
 
 
 
@@ -602,7 +602,7 @@ func hashGrow(t *maptype, h *hmap) {
 }
 ```
 
-![map_grow](./map_3.jpg)
+![map_grow](./images/map_3.jpg)
 
 
 
@@ -691,7 +691,7 @@ func evacuate(t *maptype, h *hmap, oldbucket uintptr) {
 }
 ```
 
-![map_grow](./map_4.jpg)
+![map_grow](./images/map_4.jpg)
 
 
 * 估计n.nevacuate 边界

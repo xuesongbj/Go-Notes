@@ -37,11 +37,11 @@ func main() {
 ### defer 延迟调用实现流程
 
 #### 实现流程
-![defer_scap](./defer_1.jpg)
+![defer_scap](./images/defer_1.jpg)
 
 #### 流程图
 
-![defer_scap](./defer_2.jpg)
+![defer_scap](./images/defer_2.jpg)
 
 ### 具体实现
 
