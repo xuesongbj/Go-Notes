@@ -12,9 +12,12 @@ Go源码剖析具体实现给予Go1.11版本。
 	- [x] [map](sourceCodeAnalysis/builtin-type/map.md)
 	- [x] [chan](sourceCodeAnalysis/builtin-type/chan.md)
 	- [x] [make和new](sourceCodeAnalysis/builtin-type/make_new.md)
+	- [] [interface](sourceCodeAnalysis/builtin-type/interface.md)
 - [x] 运行时
 	- [x] [defer](sourceCodeAnalysis/runtime/defer.md)
 	- [x] [panic](sourceCodeAnalysis/runtime/panic.md)
+- [x] Go学习笔记
+    - [x] [匿名函数](studyNotes/anonymous_function.md)
 	
 	
 ## 交流与沟通
