@@ -11,6 +11,7 @@ Go源码剖析具体实现给予Go1.11版本。
 	- [x] [slice](sourceCodeAnalysis/builtin-type/slice.md)
 	- [x] [map](sourceCodeAnalysis/builtin-type/map.md)
 	- [x] [chan](sourceCodeAnalysis/builtin-type/chan.md)
+	- [x] [make和new](sourceCodeAnalysis/builtin-type/make_new.md)
 - [x] 运行时
 	- [x] [defer](sourceCodeAnalysis/runtime/defer.md)
 	- [x] [panic](sourceCodeAnalysis/runtime/panic.md)
