@@ -26,6 +26,17 @@ P mcache -> mcentral mspan -> mheap page -> system
 * 如果mcentral中没有可用的mspan,则从mheap获取一批内存页分割成指定类型mspan。
 * 如果mheap没有可用的内存页或没有足够大的内存页,则从操作系统申请(至少1MB)。
 
+### 内存分配器设计名词
+
+* FixAlloc: 是一个简单的固定大小对象无锁列表内存分配器.用于管理MCache和MSpan对象.
+* treapalloc: treapNodes的大对象内存分配器
+* spanalloc: span的内存分配器
+* cachealloc: mcache的内存分配器
+* specialfinalizeralloc: specialprofile的内存分配器(specialfinalizer是从非GC内存分配的,因此必须专门处理heap上指针)
+* specialprofilealloc: specialprofile的内存分配器(用于堆内存分析)
+* arenaHintAlloc: heapHints内存分配器(管理heap内存增长) 
+
+
 ## 内存回收
 
 ### 设计思路
@@ -173,5 +184,8 @@ var physPageSize uintptr
 以下三种分配方式都应该标记为 // go:notinheap
 
 * sysAlloc: 直接从OS获取内存，可以获取任何系统页大小(4k)整数倍的内存，也可以被sysFree释放。
+
 * persistentalloc: 把多个小内存组合为单次sysAlloc防止内存碎片。 然而，没有办法释放其分配的内存。内存不会分配在heap区域。
+
 * fixalloc是slab风格的分配器，用于分配固定大小的对象。 fixalloc分配的对象可以被释放，但是这个内存可能会被fixalloc pool复用， 因此它只能给相同类型的对象复用。分配heap内存,使用GC进行内存回收扫描
+
