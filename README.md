@@ -16,7 +16,8 @@ Go源码剖析具体实现给予Go1.11版本。
 - [x] 运行时
 	- [x] [defer](sourceCodeAnalysis/runtime/defer.md)
 	- [x] [panic](sourceCodeAnalysis/runtime/panic.md)
-	- [ ] [Go内存分配器](sourceCodeAnalysis/runtime/memoryAllocator)
+	- [x] [Go内存分配器](sourceCodeAnalysis/runtime/memoryAllocator)
+    - [ ] [GC](sourceCodeAnalysis/runtime/gc)
 - [x] Go学习笔记
     - [x] [匿名函数](studyNotes/anonymous_function.md)
 	

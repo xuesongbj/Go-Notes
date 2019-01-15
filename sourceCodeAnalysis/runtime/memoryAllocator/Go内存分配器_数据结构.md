@@ -1,4 +1,4 @@
-#Go内存分配器 - 数据结构
+# Go内存分配器 - 数据结构
 
 ## 数据结构
 
@@ -87,13 +87,13 @@ mheap包括free[]、large数组和其他全局数据.mheap包含mSpanLists,所�
 
 ```
 type mheap struct {
-	free      [_MaxMHeapList]mSpanList // 未分配的span列表(page < 127)
-	freelarge mTreap                   // 未分配的span列表(page > 127)
-	busy      [_MaxMHeapList]mSpanList // 已分配的span列表(page < 127)
-	busylarge mSpanList                // 已分配的span列表(page > 127, >1MB)
+	free      [_MaxMHeapList]mSpanList 	// 未分配的span列表(page < 127)
+	freelarge mTreap                   	// 未分配的span列表(page > 127)
+	busy      [_MaxMHeapList]mSpanList 	// 已分配的span列表(page < 127)
+	busylarge mSpanList                	// 已分配的span列表(page > 127, >1MB)
 
 
-	allspans []*mspan 				   // 所有申请的mspan会被记录
+	allspans []*mspan 				   	// 所有申请的mspan会被记录
 
 
 	// 小对象规格的central空闲列表
@@ -117,14 +117,14 @@ fixalloc是go语言内存分配器。
 
 ```
 type fixalloc struct {
-	size   uintptr                     	// 分配内存块规格大小尺寸
-	first  func(arg, p unsafe.Pointer) 	// called first time p is returned
+	size   uintptr							// 分配内存块规格大小尺寸
+	first  func(arg, p unsafe.Pointer)		// called first time p is returned
 	arg    unsafe.Pointer
-	list   *mlink                      	// 内存块链表
-	chunk  uintptr 					   		// 内存块分配开始地址
+	list   *mlink							// 内存块链表
+	chunk  uintptr							// 内存块分配开始地址
 	nchunk uint32
-	inuse  uintptr 							// 内存已用字节数
+	inuse  uintptr							// 内存已用字节数
 	stat   *uint64							// 计数器
-	zero   bool 								// 初始化内存是否使用0填充,默认true
+	zero   bool								// 初始化内存是否使用0填充,默认true
 }
 ```
