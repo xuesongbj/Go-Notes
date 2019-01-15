@@ -18,12 +18,12 @@ Go源码剖析具体实现给予Go1.11版本。
 	- [x] [panic](sourceCodeAnalysis/runtime/panic.md)
 	- [x] [Go内存分配器](sourceCodeAnalysis/runtime/memoryAllocator)
     - [ ] [GC](sourceCodeAnalysis/runtime/gc)
-    - [ ] [Scheduler(sourceCodeAnalysis/runtime/scheduler)
+    - [ ] [Scheduler](sourceCodeAnalysis/runtime/scheduler/)
 - [x] Go学习笔记
     - [x] [匿名函数](studyNotes/anonymous_function.md)
 - [ ] 标准库
-    - [ ] [sync](sourceCodeAnalysis/packages/sync)
-    - [ ] [runtimie](sourceCodeAnalysis/packages/runtime)
+    - [ ] [sync](sourceCodeAnalysis/packages/sync/)
+    - [ ] [runtimie](sourceCodeAnalysis/packages/runtime/)
 - [ ] Go历史版本
     - [x] [Go1.12.beta1](versions/go1.12.beta1.md)
     
