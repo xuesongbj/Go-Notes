@@ -1,6 +1,7 @@
 # Go-Notes
 :kissing: 记录Go语言学习点点滴滴! 分享是一种快乐! :kissing:
 
+![gopher](./golang)
 ## 源码剖析
 Go源码剖析具体实现给予Go1.11版本。
 
