@@ -106,6 +106,20 @@ func mark(obj) {
 
 在标记阶段会标记所有活跃对象。标记开销的时间和活跃对象的数量呈正比。
 
+
+#### 深度优先扫描 Vs. 广度优先搜索
+搜索对象并进行标记时可以采用深度优先扫描(depth-first search)或广度优先扫描两种方式(breadth-first search)。Go默认采用广度优先扫描方式。
+
+* 深度优先扫描
+
+![mark_sweep7](./images/mark_sweep7.jpg)
+
+* 广度优先扫描
+
+![mark_sweep8](./images/mark_sweep8.jpg)
+
+
+
 ### 清理阶段
 在清理阶段,collector会遍历整个heap,回收没有打上标记的对象(即垃圾),使其能再次得到利用。
 
