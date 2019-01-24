@@ -115,6 +115,7 @@ func (t *Tree) Min() interface{} {
 		}
 		n = n.Left
 	}
+	// return n
 }
 
 // Max returns the value with max value stored in the tree
@@ -137,16 +138,16 @@ func (t *Tree) Max() interface{} {
 
 // Search returns true if the value t exists in the tree
 func (t *Tree) Search(key int) bool {
-	t.Lock().Lock()
+	t.Lock.Lock()
 	defer t.Lock.Unlock()
 
-	return search(bst.Root, key)
+	return search(t.Root, key)
 }
 
 // internal recursive function to search an value in the tree
 func search(n *Node, key int) bool {
 	if n == nil {
-		return
+		return false
 	}
 
 	if key < n.Key {
@@ -165,13 +166,13 @@ func (t *Tree) Remove(key int) {
 	t.Lock.Lock()
 	defer t.Lock.Unlock()
 
-	remove(t, key)
+	remove(t.Root, key)
 }
 
 // internal recursive function to remove an value
 func remove(node *Node, key int) *Node {
 	if node == nil {
-		return
+		return nil
 	}
 
 	if key < node.Key {
@@ -184,13 +185,13 @@ func remove(node *Node, key int) *Node {
 		return node
 	}
 
-	if node.Left == nil && node.Rigth == nil {
+	if node.Left == nil && node.Right == nil {
 		node = nil
-		return
+		return nil
 	}
 
 	if node.Left == nil {
-		node = node.Rigth
+		node = node.Right
 		return node
 	}
 
