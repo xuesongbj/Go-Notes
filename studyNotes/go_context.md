@@ -1,9 +1,9 @@
 # Go context
-Go中的context在与API和进程交互时可以派上用场，特别是在提供Web请求的生产级系统中。您可能想要通知所有goroutines停止工作并返回。
+在Golang中创建一个新的线程并不会返回像C语言类似的pid。所以不能从外部kill掉某个线程,得让它自己结束。之前可以通过channel+select方式解决这个问题。但有些场景实现起来比较麻烦,例如由一个请求衍生出多个线程,并且直降需要满足一定的约束关系(超时时间、终止线程树等)。Go1.7之后将golang.org/x/net/context移入到标准库,可通过context解决此类问题。
    
 
 ## 前言
-在了解Context之前,需要先熟悉Go的goroutine和channel的概念。本篇不在过多阐述,如详细了解,可以看Goroutine和channel章节。
+Go中的context在与API和进程交互时可以派上用场，特别是在提供Web请求的生产级系统中。您可能想要通知所有goroutines停止工作并返回。在了解Context之前,需要先熟悉Go的goroutine和channel的概念。本篇不在过多阐述,如详细了解,可以看Goroutine和channel章节。
 
 ## Context
 Go的Context包允许将"上下文"数据传递給你的程序.如上下文超时、截至时间或停止context等。
@@ -18,7 +18,7 @@ ctx := context.Background()
 
 ### 实例
 #### WitchTimeout
-定义超时操作,当task在dealine之前未完成task,则超时.
+WithCancel和WithTimeout对应的是timerCtx。WithCancel和WithTimeout是相似的,WithDeadline是设置具体的deadline时间,到达deadline的时间则Goroutine退出,而WithTimeout简单粗暴,直接return WithDeadline(parent, time.Now().Add(timeout))。
 
 ```
 package withtimeout
@@ -76,7 +76,7 @@ func Test_fnA(t *testing.T) {
 ```
 
 #### withcancel
-通过withcancel函数可以对goroutine进行控制。
+Withcancel对应的是cancelCtx,返回cancelCtx和CancelFunc。调用CancelFunc时,关闭对应的context.done,同时让它所有子goroutine退出。
 
 ```
 package withcancel
@@ -375,6 +375,8 @@ type valueCtx struct {
 ```
 
 key 需支持比较操作.按此做法,Value Context 可以构建多级结构.
+
+WithValue对应valueCtx,WithValue在Context中设置一个map,子Context都可以获取到map内值。
 
 ```
 func WithValue(parent Context, key, val interface{}) Context {
