@@ -1,0 +1,16 @@
+// cd src/grpc-helloworld && protoc -I helloworld/ helloworld/helloworld.proto --go_out=plugins=grpc:helloworld
+syntax = "proto3";
+
+package helloworld;
+
+service Greeter {
+    rpc SayHello (stream HelloRequest) returns (stream HelloReply) {}
+}
+
+message HelloRequest {
+    string name = 1;
+}
+
+message HelloReply {
+    string message = 1;
+}
