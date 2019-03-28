@@ -27,7 +27,7 @@ Go源码剖析具体实现给予Go1.11版本。
     - [ ] [runtimie](sourceCodeAnalysis/packages/runtime/)
     - [x] [context](studyNotes/go_context.md)
 - [ ] Go历史版本
-    - [x] [Go1.12.beta1](versions/go1.12.beta1.md)
+    - [x] [Go1.12](versions/go1.12.md)
     
 
 	
