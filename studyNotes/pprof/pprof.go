@@ -168,13 +168,3 @@ type MemStats struct {
                 Frees uint64
         }
 }
-
-
-
-
-// A MemProfileRecord describes the live objects allocated by a particular call sequence (stack trace).
-type MemProfileRecord struct {
-    AllocBytes, FreeBytes     int64       // number of bytes allocated, freed
-    AllocObjects, FreeObjects int64       // number of objects allocated, freed
-    Stack0                    [32]uintptr // stack trace for this record; ends at first 0 entry
-}
