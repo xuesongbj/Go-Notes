@@ -147,6 +147,3 @@ $> go tool pprof -http=:8080 cpu.prof
 ![pprof_source](./pprof_source.jpg)
 
 通过Pprof可视化界面,可以更加直观看到Go 程序的调用链、资源使用情况等。在进行排查问题或分析故障时可以说是一把瑞士军刀。
-
-
-
