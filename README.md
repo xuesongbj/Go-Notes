@@ -22,6 +22,7 @@ Go源码剖析具体实现给予Go1.11版本。
     - [ ] [Scheduler](sourceCodeAnalysis/runtime/scheduler/)
 - [x] Go学习笔记
     - [x] [匿名函数](studyNotes/anonymous_function.md)
+    - [x] [PProf](studyNotes/pprof/)
 - [ ] 标准库
     - [ ] [sync](sourceCodeAnalysis/packages/sync/)
     - [ ] [runtimie](sourceCodeAnalysis/packages/runtime/)
