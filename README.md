@@ -28,7 +28,7 @@ Go源码剖析具体实现给予Go1.11版本。
     - [ ] [sync](sourceCodeAnalysis/packages/sync/)
     - [ ] [runtimie](sourceCodeAnalysis/packages/runtime/)
     - [x] [context学习笔记](studyNotes/context/)
-    - [x] [context源码剖析](sourceCodeAnalysis/context/)
+    - [x] [context源码剖析](sourceCodeAnalysis/packages/context/)
 - [ ] Go历史版本
     - [x] [Go1.12](versions/go1.12.md)
     
