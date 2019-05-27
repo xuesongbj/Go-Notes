@@ -29,6 +29,12 @@ TEXT main.main(SB) /Users/David/data/go/go.test/src/Demo/go_test/main.go
 
 ### GO 任务
 
+#### 流程关系图
+
+![task](./g.jpg)
+
+##### 源码剖析
+
 ```
 // 创建新的goroutine运行函数fn.放入g等待队列,等待被调度
 func newproc(siz int32, fn *funcval) {
