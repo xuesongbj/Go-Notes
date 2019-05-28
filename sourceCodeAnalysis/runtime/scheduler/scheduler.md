@@ -134,7 +134,13 @@ func newproc1(fn *funcval, argp *uint8, narg int32, callergp *g, callerpc uintpt
 ```
 
 
-### Go线程
+## Go线程
+
+### 唤醒M,执行任务流程图
+
+![M](./m.jpg)
+
+### 源码剖析
 
 ```
 func wakep() {
@@ -256,3 +262,31 @@ func allocm(_p_ *p, fn func()) *m {
 	return mp
 }
 ```
+
+### Worker线程parking/unparking - 休眠/唤醒
+我们需要保证worker线程数量跟CPU硬件并发性之间要取得平衡,以节省CPU资源和电源功耗。要实现以下两个原因并不简单:
+
+* 调度程序状态按特定规则进行分布(根据process进行分配),而不是将所有调度程序全局分布。
+* 为了获得最佳线程管理,需要知道未来优化方向(将来新的goroutine 就绪之后,工作线程不需要休眠)。
+
+#### Go目前Worker线程调度做法
+
+* 当G状态就绪,有空闲P,但没有处于自旋线程(M),则从M休眠队列唤醒一个M线程。
+* 如果本地队列和全局队列任务都没有任务执行,则认为M线程正在自旋。自旋状态用m.spinning和sched.nmspinning表示。
+* 当G没有发生切换,但Worker线程和G解绑,也会处于自旋状态。
+* Worker线程休眠之前,自旋Worker线程会在每个P队列中寻找G任务。如果自旋线程找到G任务,它会将自己从自旋状态移出,继续执行G任务;如果找不到G任务,它会自动退出自旋状态,然后进入休眠状态。
+* 当G状态就绪后,只要有一个自旋状态的Worker线程(sched.nmspinning > 1)存在,我们就不会唤醒一个新的Worker线程。为了弥补这一点,如果最后一个自旋线程拿到G任务,则当前Worker线程移出自旋状态。唤醒一个新的线程进入自旋状态。
+
+这种调度做法,可以控制线程唤醒的数量,避免唤醒过多的Worker线程。也同时保证了最大CPU并行度的利用率。
+
+#### Worker线程自旋状态转换
+当Worker线程从Spinning -> non-spinning 转换期间要小心。自旋Worker线程状态转换可能会跟新创建G任务产生竞争,并且需要唤醒另外的Worker线程等情况。我们最终可能会出现CPU未充分利用。
+
+* Goroutine就绪一般模式是: Goroutien写入P本地队列 -> StoreLoad-style内存屏障 -> 检查sched.nmspinning状态。
+
+* Spinning -> non_spinning过渡一般模式是: nmspinning递减 -> StoreLoad-style内存屏障 -> 检查每个P队列的新任务。
+
+
+注意: 以上的所有调度做法都是基于本地队列,不适用于全局运行队列。具体的全局队列调度查看nmspinning是如何操作的。
+
+
