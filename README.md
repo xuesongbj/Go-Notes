@@ -24,7 +24,8 @@ Go源码剖析具体实现给予Go1.11版本。
     - [x] [匿名函数](studyNotes/anonymous_function.md)
     - [x] [闭包](studyNotes/closure/)
     - [x] [PProf](studyNotes/pprof/)
-    - [ ] [strconv/itoa](sourceCodeAnalysis/packages/strconv/itoa/)
+    - [x] [strconv/itoa](sourceCodeAnalysis/packages/strconv/itoa/)
+    - [x] [strconv/atoi](sourceCodeAnalysis/packages/strconv/atoi/)
 - [ ] 标准库
     - [ ] [sync](sourceCodeAnalysis/packages/sync/)
     - [ ] [runtimie](sourceCodeAnalysis/packages/runtime/)
