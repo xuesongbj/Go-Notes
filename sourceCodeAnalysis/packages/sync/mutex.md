@@ -341,3 +341,8 @@ func Demo() {
 }
 ```
 
+输出:
+
+```
+fatal error: sync: unlock of unlocked mutex
+```
