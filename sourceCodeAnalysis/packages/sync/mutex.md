@@ -257,3 +257,87 @@ func (m *Mutex) lockSlow() {
 ![](./mutex.jpg)
 
 
+### Unlock具体实现
+
+```
+// 对当前m进行解锁
+// NOTE:
+// 1. 对一个Unlock进行解锁,会触发异常
+// 2. 锁和goroutine没有关系
+// 3. 允许A锁定Mutex,由另外一个Goroutine B进行解锁
+func (m *Mutex) Unlock() {
+	// 快速模式: 通过原子操作删除mutexLocked位
+	new := atomic.AddInt32(&m.state, -mutexLocked)
+	
+	// 如果快速模式删除失败,通过普通模式删除
+	if new != 0 {		
+		// unlockSlow独立函数实现普通模式解锁,以确保fast path方式可以被内联
+		m.unlockSlow(new)
+	}
+}
+
+func (m *Mutex) unlockSlow(new int32) {
+	// 对一个unlock进行释放锁, panic
+	if (new+mutexLocked)&mutexLocked == 0 {
+		throw("sync: unlock of unlocked mutex")
+	}
+	
+	// 正常模式
+	if new&mutexStarving == 0 {
+		old := new
+		for {
+			// 如果没有等待的Goroutine或锁不处于空闲的状态,直接返回。
+			if old>>mutexWaiterShift == 0 || old&(mutexLocked|mutexWoken|mutexStarving) != 0 {
+				return
+			}
+			
+			// 等待的goroutine计数器减1
+			// 并唤醒goroutine
+			new = (old - 1<<mutexWaiterShift) | mutexWoken
+			
+			// 设置新的state,这里通过信号量唤醒一个阻塞的goroutine去获取锁
+			if atomic.CompareAndSwapInt32(&m.state, old, new) {
+				runtime_Semrelease(&m.sema, false, 1)
+				return
+			}
+			old = m.state
+		}
+	} else {
+		// 饥饿模式
+		// 饥饿模式下直接将锁的所有权直接传给等待队列第一个
+		
+		// NOTE:
+		// 1. 此时state的mutexLocked没有加锁,唤醒的goroutine设置mutexLocked。
+		// 2. 在此期间,如果有新的goroutine请求锁,因为mutex处于饥饿状态，mutex还是被认为处于锁状态,新来的goroutine不会把锁抢走.
+		
+		runtime_Semrelease(&m.sema, true, 1)
+	}
+}
+```
+
+### 实例
+
+```
+package MutexDemo
+
+import (
+	"sync"
+	"time"
+)
+
+func Demo() {
+	var m sync.Mutex
+	
+	go func(){
+		m.Lock()
+		time.Sleep(time.Second * 10)
+		m.Unlock()  // 1 unlock mutex
+	}()
+	
+	time.Sleep(time.Second)
+	m.Unlock()      // 2 unlock mutex, panic!!!
+	
+	select{}
+}
+```
+
