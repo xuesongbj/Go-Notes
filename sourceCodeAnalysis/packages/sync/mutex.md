@@ -346,3 +346,43 @@ func Demo() {
 ```
 fatal error: sync: unlock of unlocked mutex
 ```
+
+
+### 自旋实现
+Go通过runtime_doSpin函数作为入口实现自旋。链接器将runtime_doSpin函数链接为sync_runtime_doSpin,具体功能由该函数实现.
+
+```
+// runtime/lock_futex.go
+// 最大自旋数
+active_spin_cnt = 30
+
+
+// runtime/proc.go
+//go:linkname sync_runtime_doSpin sync.runtime_doSpin
+//go:nosplit
+func sync_runtime_doSpin() {
+		
+		 // 通过procyield实现自旋(汇编实现)
+		 // active_spin_cnt，自旋计数
+        procyield(active_spin_cnt)
+}
+```
+
+```
+// runtime/asm_amd64.s
+TEXT runtime·procyield(SB),NOSPLIT,$0-0
+        MOVL    cycles+0(FP), AX
+again:
+        PAUSE             // 低功耗
+        SUBL    $1, AX    // 计数器自减  
+        JNZ     again     // 计数器大于0时,跳转again,自旋
+        RET
+```
+
+#### PAUSE
+PAUSE指令提升了自旋等待循环(spin-wait loop)的性能。
+
+PAUSE指令提醒处理器,这段代码序列是循环等待。利用该提示可避免大多数情况下的内存顺序违规(memory order violation),将大幅提升性能。
+
+另一功能是降低Intel P4在执行循环等待时的耗电量。处理器在循环等待时执行的非常快,这将导致消耗大量电力，而在循环中插入PAUSE指令会大幅降低电力消耗。
+
