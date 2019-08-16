@@ -272,6 +272,236 @@ $2 = 0xc000068f28         // 指向底层数组
 (gdb) x/4xb 0xc000068f28  // 查看底层数组内容
 0xc000068f04:	0x61	0x62	0x63	0x64
 ```
+
+### 越界访问
+内存越界访问在编程中是很严重的问题，可能会导致数据写乱、内存无法垃圾回收等问题。为保证内存访问安全，要保证访问的数据不会发生越界访问。
+
+如下实例,如果本想修改a值,但通过指针运算后发生了越界，修改了b的值。
+
+```
+package main
+
+import (
+        "fmt"
+        "unsafe"
+)
+
+
+//go:noinline
+//go:nosplit
+func test() {
+        a, b := 1, 2
+        fmt.Println(&a, &b)
+
+        p := &a
+        u := uintptr(unsafe.Pointer(p)) + unsafe.Sizeof(b)
+
+        p = (*int)(unsafe.Pointer(u))
+        *p +=100
+        fmt.Println(p, *p)
+}
+
+func main() {
+        test()
+}
+```
+
+### 不同指针类型对GC的影响
+
+#### 下面是一个安全指针实例，GC认为当前指针对象是合法,所以不会进行垃圾回收。
+
+```
+package main
+
+import (
+        // "fmt"
+        // "unsafe"
+        "time"
+)
+
+type data struct {
+        x [10<<20]byte
+        y int
+}
+
+//go:noinline
+//go:nosplit
+func test() *data {
+        d := new(data)
+        d.x[0] = 100
+
+        return d
+}
+
+func main() {
+        d := make([]*data, 0, 100)
+        for {
+                d = append(d, test())
+                time.Sleep(time.Second)
+        }
+}
+```
+
+通过以下gc trace可以看出,内存不停增长,没有内存进行回收。
+
+```
+root@vagrant:/home/work/go/go.test/src# GODEBUG=gctrace=1 ./test
+gc 1 @0.000s 11%: 0.003+0.081+0.002 ms clock, 0.003+0.075/0/0+0.002 ms cpu, 10->10->10 MB, 11 MB goal, 1 P
+gc 2 @1.001s 0%: 0.003+0.11+0.003 ms clock, 0.003+0/0.020/0.067+0.003 ms cpu, 20->20->20 MB, 21 MB goal, 1 P
+gc 3 @2.002s 0%: 0.003+0.12+0.003 ms clock, 0.003+0/0.019/0.072+0.003 ms cpu, 30->30->30 MB, 40 MB goal, 1 P
+gc 4 @4.004s 0%: 0.003+0.13+0.003 ms clock, 0.003+0/0.018/0.069+0.003 ms cpu, 50->50->50 MB, 60 MB goal, 1 P
+gc 5 @8.006s 0%: 0.002+0.093+0.003 ms clock, 0.002+0/0.010/0.052+0.003 ms cpu, 90->90->90 MB, 100 MB goal, 1 P
+```
+
+#### 如下实例是一个非安全指针(unsafe.Pointer)实例,GC也认为当前指针对象是合法,所以不会进行垃圾回收内存。
+
+```
+package main
+
+import (
+        // "fmt"
+        "unsafe"
+	"time"
+)
+
+type data struct {
+	x [10<<20]byte
+	y int
+}
+
+//go:noinline
+//go:nosplit
+func test() unsafe.Pointer {
+	d := new(data)
+	d.x[0] = 100
+
+	return unsafe.Pointer(d)
+}
+
+func main() {
+	d := make([]unsafe.Pointer, 0, 100)
+	for {
+		d = append(d, test())
+		time.Sleep(time.Second)
+	}
+}
+```
+
+通过以下gc trace可以看出,内存不停增长,没有内存进行回收。
+
+```
+root@vagrant:/home/work/go/go.test/src# GODEBUG=gctrace=1 ./test
+gc 1 @0.000s 16%: 0.002+0.10+0.003 ms clock, 0.002+0.097/0/0+0.003 ms cpu, 10->10->10 MB, 11 MB goal, 1 P
+gc 2 @1.006s 0%: 0.003+0.12+0.003 ms clock, 0.003+0/0.019/0.065+0.003 ms cpu, 20->20->20 MB, 21 MB goal, 1 P
+gc 3 @2.006s 0%: 0.002+0.089+0.002 ms clock, 0.002+0/0.011/0.046+0.002 ms cpu, 30->30->30 MB, 40 MB goal, 1 P
+gc 4 @4.009s 0%: 0.002+0.090+0.002 ms clock, 0.002+0/0.011/0.046+0.002 ms cpu, 50->50->50 MB, 60 MB goal, 1 P
+gc 5 @8.013s 0%: 0.003+0.12+0.003 ms clock, 0.003+0/0.018/0.074+0.003 ms cpu, 90->90->90 MB, 100 MB goal, 1 P
+```
+
+#### uintptr存储的是指针类型数据但它返回的是一个整数类型，无法构成引用关系，所以GC会对其进行内存回收。
+
+```
+package main
+
+import (
+        // "fmt"
+        "unsafe"
+	"time"
+)
+
+type data struct {
+	x [10<<20]byte
+	y int
+}
+
+//go:noinline
+//go:nosplit
+func test() uintptr {
+	d := new(data)
+	d.x[0] = 100
+
+	return uintptr(unsafe.Pointer(d))
+}
+
+func main() {
+	d := make([]uintptr, 0, 100)
+	for {
+		d = append(d, test())
+		time.Sleep(time.Second)
+	}
+}
+```
+
+gctrace可以看出,内存被释放掉。
+
+```
+gc 1 @0.000s 14%: 0.002+0.075+0.003 ms clock, 0.002+0.070/0/0+0.003 ms cpu, 10->10->0 MB, 11 MB goal, 1 P
+scvg: 0 MB released
+scvg: inuse: 0, idle: 63, sys: 63, released: 53, consumed: 9 (MB)
+scvg: 2 MB released
+scvg: inuse: 0, idle: 63, sys: 63, released: 55, consumed: 7 (MB)
+scvg: 2 MB released
+scvg: inuse: 0, idle: 63, sys: 63, released: 57, consumed: 5 (MB)
+gc 2 @1.000s 0%: 0.002+0.23+0.004 ms clock, 0.002+0/0.11/0.11+0.004 ms cpu, 10->10->0 MB, 11 MB goal, 1 P
+scvg: inuse: 10, idle: 53, sys: 63, released: 53, consumed: 10 (MB)
+scvg: 0 MB released
+scvg: inuse: 0, idle: 63, sys: 63, released: 54, consumed: 9 (MB)
+scvg: 2 MB released
+scvg: inuse: 0, idle: 63, sys: 63, released: 56, consumed: 7 (MB)
+scvg: 2 MB released
+scvg: inuse: 0, idle: 63, sys: 63, released: 58, consumed: 5 (MB)
+gc 3 @2.004s 0%: 0.002+0.068+0.002 ms clock, 0.002+0/0.015/0.045+0.002 ms cpu, 10->10->0 MB, 11 MB goal, 1 P
+```
+
+* uintptr使用场景
+
+	如果程序是一个观察者,需要扫描一批对象，无需构成引用关系。则可以使用uintptr。
+	
+
+#### 如果仅引用一个类型的某一个字段,也会存在引用关系，构成合法指针。整个结构的内存也不会被回收。
+
+```
+package main
+
+import (
+        // "fmt"
+        // "unsafe"
+        "time"
+)
+
+type data struct {
+        x [10<<20]byte
+        y int
+}
+
+//go:noinline
+//go:nosplit
+func test() *int {
+        d := new(data)
+        d.x[0] = 100
+
+        return &d.y
+}
+
+func main() {
+        d := make([]*int, 0, 100)
+        for {
+                d = append(d, test())
+                time.Sleep(time.Second)
+        }
+}
+```
+
+gctrace结果可以看出,虽然只引用了data类型的y字段，但对整个结构构成引用关系。GC也不会对内存进行回收。
+
+```
+root@vagrant:/home/work/go/go.test/src# GODEBUG=gctrace=1 ./test
+gc 1 @0.001s 25%: 0.003+0.66+0.003 ms clock, 0.003+0.66/0/0+0.003 ms cpu, 10->10->10 MB, 11 MB goal, 1 P
+gc 2 @1.008s 0%: 0.002+0.094+0.002 ms clock, 0.002+0/0.015/0.052+0.002 ms cpu, 20->20->20 MB, 21 MB goal, 1 P
+gc 3 @2.008s 0%: 0.003+0.14+0.003 ms clock, 0.003+0/0.016/0.073+0.003 ms cpu, 30->30->30 MB, 40 MB goal, 1 P
+gc 4 @4.010s 0%: 0.003+0.12+0.003 ms clock, 0.003+0/0.016/0.067+0.003 ms cpu, 50->50->50 MB, 60 MB goal, 1 P
+```
+
 ### 备注
 
 * 内存字节序
