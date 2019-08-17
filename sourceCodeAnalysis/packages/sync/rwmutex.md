@@ -270,3 +270,29 @@ func goready(gp *g, traceskip int) {
     })
 }
 ```
+
+### Go RWmutex fast-path存在的bug
+
+Go1.12和Go1.13版本RLock和UNlock时对其进行了inline优化，在for loop中,如果RLock和RUnlock被inline之后就没有函数调用了，会产生死锁。因为只有函数调用,才有可能被Go scheduler将当前Goroutine调度出去,flushed才会被执行。
+
+```
+func (c *queue) wait() {
+    for {
+        c.RLock()
+        flushed := c.flushed
+        c.RUnlock()
+        if flushed {
+            return
+        }
+    }
+}
+```
+
+#### 协作式抢占
+当前goroutine的“抢占式”调度依靠的是compiler在函数中自动插入的“cooperative preemption point”来实现的，但这种方式在使用过程中依然有各种各样的问题，比如：检查点的性能损耗、诡异的全面延迟问题以及调试上的困难。近期负责go runtime gc设计与实现的Austin Clements提出了一个proposal：non-cooperative goroutine preemption ，该proposal将去除cooperative preemption point，而改为利用构建和记录每条指令的stack和register map的方式实现goroutine的抢占， 该proposal预计将在go 1.12中实现。
+
+参考文献:
+
+[github issue](https://github.com/golang/go/issues/24543)
+
+[Go scheduler](https://www.ardanlabs.com/blog/2018/08/scheduling-in-go-part2.html)
