@@ -296,3 +296,38 @@ func (c *queue) wait() {
 [github issue](https://github.com/golang/go/issues/24543)
 
 [Go scheduler](https://www.ardanlabs.com/blog/2018/08/scheduling-in-go-part2.html)
+
+### 写锁实现
+
+#### Lock加锁
+```
+// 对写锁进行"加锁"
+// 写锁之前，首先将已经获取到读锁的"读者"消费完
+func (rw *RWMutex) Lock() {
+	// 锁定M，同一时刻仅有一个goroutine可以获得M。
+	// 即Mutex
+	rw.w.Lock()
+
+	// 获取"写锁"之前，先将剩下的读操作读完。
+	r := atomic.AddInt32(&rw.readerCount, -rwmutexMaxReaders) + rwmutexMaxReaders
+	if r != 0 && atomic.AddInt32(&rw.readerWait, r) != 0 {
+		runtime_SemacquireMutex(&rw.writerSem, false)
+	}
+}
+```
+
+#### Unlock解锁
+
+```
+// 对写锁进行"解锁"
+// 与互斥锁一样,锁定的RWMutex与特定的goroutine无关。一个goroutine锁定RWMutex,然后由另一个goroutine解锁它。
+func (rw *RWMutex) Unlock() {
+	// 向读者发送唤醒信号
+	r := atomic.AddInt32(&rw.readerCount, rwmutexMaxReaders)
+	for i := 0; i < int(r); i++ {
+		runtime_Semrelease(&rw.readerSem, false)
+	}
+
+	rw.w.Unlock()
+}
+```
