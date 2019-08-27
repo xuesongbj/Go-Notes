@@ -28,6 +28,7 @@ Go源码剖析具体实现给予Go1.11版本。
     - [x] [strconv/atoi](sourceCodeAnalysis/packages/strconv/atoi/)
     - [x] [time](sourceCodeAnalysis/packages/time/)
     - [x] [指针](studyNotes/pointer/)
+    - [ ] [Go工具链](studyNotes/cmd/)
 - [ ] 标准库
     - [ ] [sync](sourceCodeAnalysis/packages/sync/)
     - [ ] [runtimie](sourceCodeAnalysis/packages/runtime/)
