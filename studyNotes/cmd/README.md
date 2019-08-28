@@ -151,8 +151,16 @@ func main() {
 	
 ```
 -E : 输出符号表信息
+-% : 非静态初始化debug信息
 -N : 关闭优化
+-C : 关闭错误信息中列信息输出
+-L : 错误信息中输出完整文件名称
+-D path : 设置本地相对路径导入
+-I directory : 增加imort扫描路径
+-K : debug信息中不输出行号
 -S : 输出编译后生成的汇编代码(go tool compile -s 或 go build -gcflags "-S")
+-V : 输出编译当前版本信息
+-W : 输出debug解析树
 -m : 输出优化信息
 -o : 编译后指定输出名字，默认当前包名称
 -race : 开启内存竞争检查
@@ -168,4 +176,90 @@ func main() {
 -traceprofile file : 将程序执行的trace信息写入文件
 -v : 显示调试详细信息
 -w : debug类型检查
+-live : debug活跃度分析
+-shared : 生成动态链接库,不包含main package
+-smallframes : 设置stack分配最大变量大小,默认10MB
+-memprofilerate rate : 设置内存分析器对内存对象抽样率,默认的采样率是是每512KB的内存分配一个样本。通过修改runtime.MemProfileRate变量进行修改。
+-memprofile file : 程序内存分析pprof写入到指定文件
+-mutexprofile file : 程序mutex分析结果写入指定文件
+-asmhdr file : 将汇编头信息写入文件
+-bench file: 将benchmark时间追加到文件
+-blockprofile file: 将block分析信息写入文件
+-buildid id : 在导出元数据时,将构建id作为记录id
+-c int : 编译时的并发数
+-cpuprofile file: cpu分析结果写入文件
 ```
+
+```
+$> go build -gcflags=-S fmt        // 打印fmt反汇编代码
+$> go build -gcflags=all=-S fmt    // 打印fmt及所依赖的反汇编代码
+```
+
+* -ldflags
+
+	程序编译完之后,需要通过链接器将多个目标文件合并成一个可执行文件(ELF)。go进行编译和链接时可以对链接器传递参数。具体参数如下
+
+```
+-B note: 添加ELF NT_GNU_BUILD_ID
+
+$> go build -ldflags "-B 0x1234" test
+$> readelf  -n test(ELF文件)
+
+Displaying notes found in: .note.gnu.build-id
+  Owner                 Data size	Description
+  GNU                  0x00000002	NT_GNU_BUILD_ID (unique build ID bitstring)
+    Build ID: 1234
+    
+或者直接查询.note.gnu.build-id section数据:
+
+$> readelf -x .note.gnu.build-id test(ELF文件)
+Hex dump of section '.note.gnu.build-id':
+  0x00400fec 04000000 02000000 03000000 474e5500 ............GNU.
+  0x00400ffc 12340000
+```
+
+```
+-E entry: 设置符号名称
+-H type: 设置Header类型
+-I linker: 使用linker作为ELF linker
+-L directory: 将指定目录添加到库文件路径
+-T address: 设置.text端地址
+-n: 导出符号表
+-s: 关闭符号表
+-u: 拒绝使用unsafe package
+-v: 打印连接器trace信息
+-w: 禁用DWARF
+```
+
+* -linkshared
+
+	链接以前使用-buildmode=shared创建的动态链接
+	
+* -mod
+
+	go mod对模块管理
+	
+```
+download: 下载模块到本地缓存,缓存路径是$GOPATH/pkg/mod/cache
+vendor: 把依赖拷贝到vendor/目录下
+graph: 把模块之间的依赖图显示出来
+init: 当前目录初始化新的模块
+edit: 提供了命令版修改go.mod文件
+tidy: 对go.mod依赖的package版本进行更新
+verify: 确认依赖关系
+why: 解释为什么需要包和模块
+```
+
+* -pkgdir dir
+
+	从指定目录安装并加载包,而不从通常的位置安装
+	
+* -trimpath
+
+	从生成的二进制文件中删除所有文件系统路径。记录的文件名称以go、path@version或者GoPATH开头，而不是绝对文件系统路径。
+	
+* -toolexec 'cmd args'
+
+	用于调用vet和asm等工具链程序的程序。
+	
+	
