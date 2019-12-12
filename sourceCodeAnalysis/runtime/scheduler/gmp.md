@@ -6,17 +6,17 @@
 
 ```
 type g struct {
-	stack       stack   		  // 执行栈
+	stack       stack   		  		// 执行栈
 
 	// 当协程stack不够用时,用于stack扩容.
 	stackguard0 uintptr
 	stackguard1 uintptr
 
-	m              *m			   // 当前绑定M线程
-	sched          gobuf 		   // 用于保存执行现场
-	goid           int64 		   // goroutine ID
-	gopc           uintptr         // 调用者PC/IP寄存器
-	startpc        uintptr         // 任务函数
+	m              *m			   	// 当前绑定M线程
+	sched          gobuf 		   		// 用于保存执行现场
+	goid           int64 		   		// goroutine ID
+	gopc           uintptr         			// 调用者PC/IP寄存器
+	startpc        uintptr         			// 任务函数
 }
 ```
 
@@ -46,13 +46,13 @@ _Gscanwaiting  = _Gscan + _Gwaiting  // 0x1004
 
 ```
 type p struct {
-	id          int32               // P id
+	id          int32               		// P id
 	status      uint32 				// P状态
 
 	// 本地队列Locked-free
-	runqhead uint32                 // 本地队列头
-	runqtail uint32                 // 本地队列尾
-	runq     [256]guintptr          // 本地队列长度(256)
+	runqhead uint32                 		// 本地队列头
+	runqtail uint32                 		// 本地队列尾
+	runq     [256]guintptr          		// 本地队列长度(256)
 
 	// runnext不为空,则优先执行runnext G
 	// 而不是从runq中获取G任务执行
@@ -77,21 +77,21 @@ type p struct {
 
 ```
 type m struct {
-	g0            *g     	    // 系统系统栈空间
+	g0            *g     	    	// 系统系统栈空间
 	tls           [6]uintptr   	// TLS
-	mstartfn      func()        // 启动函数
+	mstartfn      func()        	// 启动函数
 	curg          *g       		// 当前正在运行的G
 	p             puintptr 		// 和P绑定,执行g代码
 	nextp         puintptr		// 临时存放P
 	oldp          puintptr 		// 系统调用之前的绑定的P
-	id            int64         // 线程ID
-	preemptoff    string 		// if != "", keep curg running on this m
-	spinning      bool 			// m处于自旋状态
+	id            int64         	// 线程ID
+	preemptoff    string 		// 当preemptoff非空时,禁用抢占调度(disable preemption)
+	spinning      bool 		// m处于自旋状态
 	incgo         bool   		// 当前M线程执行cgo代码;不会和p绑定
-	park          note			// 休眠锁
+	park          note		// 休眠锁
 	schedlink     muintptr 		// 链表
 	mcache        *mcache
-	createstack   [32]uintptr    // 创建M线程栈空间
+	createstack   [32]uintptr    	// 创建M线程栈空间
 }
 ```
 
