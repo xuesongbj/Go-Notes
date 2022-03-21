@@ -14,7 +14,7 @@
 
 ### any
 
-`any` 其实是 `interface{}` 的别名，行为和`interface{}`相同，让人看起来跟舒服，以后可以不再使用`interface{}`。
+`any` 其实是 `interface{}` 的别名，行为和`interface{}`相同，让人看起来很舒服，以后可以不再使用`interface{}`。
 
 ```go
 // ForEach使用any配合类型参数，可以让ForEach()接收任何类型的参数
