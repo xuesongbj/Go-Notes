@@ -9,6 +9,7 @@ Go源码剖析具体实现给予Go1.11、Go1.12、Go1.13版本。
 
 - [x] 内置类型
 	- [x] [string](sourceCodeAnalysis/builtin-type/string.md)
+    - [x] [generic](sourceCodeAnalysis/builtin-type/generics.md)
 	- [x] [slice](sourceCodeAnalysis/builtin-type/slice.md)
 	- [x] [map](sourceCodeAnalysis/builtin-type/map.md)
 	- [x] [chan](sourceCodeAnalysis/builtin-type/chan.md)
