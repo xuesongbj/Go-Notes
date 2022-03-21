@@ -3,13 +3,14 @@
 
 ![gopher](./logo.gif)
 ## 源码剖析
-Go源码剖析具体实现给予Go1.11、Go1.12、Go1.13版本。
+
+Go源码剖析具体实现基于`Go1.11+`版本。
 
 ### 目录
 
 - [x] 内置类型
 	- [x] [string](sourceCodeAnalysis/builtin-type/string.md)
-    - [x] [generic](sourceCodeAnalysis/builtin-type/generics.md)
+    - [x] [generic_1.18](sourceCodeAnalysis/builtin-type/generics.md)
 	- [x] [slice](sourceCodeAnalysis/builtin-type/slice.md)
 	- [x] [map](sourceCodeAnalysis/builtin-type/map.md)
 	- [x] [chan](sourceCodeAnalysis/builtin-type/chan.md)
@@ -17,7 +18,7 @@ Go源码剖析具体实现给予Go1.11、Go1.12、Go1.13版本。
 	- [ ] [interface](sourceCodeAnalysis/builtin-type/interface.md)
 - [x] 运行时
 	- [x] [defer](sourceCodeAnalysis/runtime/defer.md)
-        - [x] [go1.13 defer](sourceCodeAnalysis/runtime/defer_1.13.md) 
+        - [x] [go1.13 defer](sourceCodeAnalysis/runtime/defer_1.13.md)
 	- [x] [panic](sourceCodeAnalysis/runtime/panic.md)
 	- [x] [Go内存分配器](sourceCodeAnalysis/runtime/memoryAllocator)
     - [ ] [GC](sourceCodeAnalysis/runtime/gc)
