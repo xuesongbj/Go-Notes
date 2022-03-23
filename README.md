@@ -1,12 +1,7 @@
 # Go-Notes
 :kissing: 记录Go语言学习点点滴滴! 分享是一种快乐! :kissing:
 
-![gopher](./logo.gif)
-## 源码剖析
-
-Go源码剖析具体实现基于`Go1.11+`版本。
-
-### 目录
+## 目录
 
 - [x] 内置类型
 	- [x] [string](sourceCodeAnalysis/builtin-type/string.md)
@@ -40,13 +35,13 @@ Go源码剖析具体实现基于`Go1.11+`版本。
 - [ ] Go历史版本
     - [x] [Go1.12](versions/go1.12.md)
     - [ ] [Go1.15](versions/go1.15.md)
-    
 
-	
-	
+## 源码剖析
+
+Go源码剖析具体实现基于`Go1.11+`版本。
+
+&nbsp;
+
 ## 交流与沟通
-<H4>Emaik: davidbjhd@gmail.com</H4>
-	
-	
 
-
+<img width="150" height="150" src="./wechat.jpeg">
