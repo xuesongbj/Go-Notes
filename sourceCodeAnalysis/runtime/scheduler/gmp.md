@@ -22,7 +22,7 @@ type g struct {
 
 ### G状态
 
-```
+```go
 1. _Gidle = 0: g已经创建,但未初始化。
 2. _Grunnable = 1: g放入队列,等待被调度
 3. _Grunning = 2: GPM绑定,执行用户态代码

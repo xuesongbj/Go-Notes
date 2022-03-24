@@ -1,11 +1,14 @@
 # Go1.13 defer
-go 1.13版本对defer进行了优化，对符号不发生逃逸的defer函数通过deferprocStack定义一个延迟调用对象，放入队列，等待被调用。deferprocStack函数是Go1.13版本新加入函数，该函数不会发生逃逸。
+
+go 1.13版本对defer进行了优化，对符号不发生逃逸的defer函数通过`deferprocStack`定义一个延迟调用对象，放入队列，等待被调用。`deferprocStack` 函数是Go1.13版本新加入函数，该函数不会发生逃逸。
 
 ### 实例
+
 通过Go1.12版本和Go1.13版本编译如下源代码，确定
 
 #### 源代码
-```
+
+```go
 package main
 
 func main() {
@@ -17,16 +20,22 @@ func main() {
 }
 ```
 
+&nbsp;
+
 #### Go1.12版本编译
-```
+
+```bash
 ➜  src git:(master) ✗ go build -gcflags "-l -m -N" -o m12 main.go
 # command-line-arguments
 ./main.go:19:11: main func literal does not escape
 ./main.go:20:18: main.func1 make([]int, 128) does not escape
 ```
 
+&nbsp;
+
 #### Go1.13版本编译
-```
+
+```bash
 ➜  src git:(master) ✗ ~/data/go-go1.13/bin/go build -gcflags "-l -m -N" -o m13 main.go
 # command-line-arguments
 ./main.go:19:11: main func literal does not escape
@@ -35,11 +44,13 @@ func main() {
 
 通过Go1.12和Go1.13两个版本编译结果可以看出，函数defer函数 main.main.func1没有发生逃逸。接下来查看反汇编有什么差异。
 
+&nbsp;
+
 #### Go1.12 反汇编
 
 通过反汇编可以看出，Go1.12版本defer通过deferproc定义一个延迟调用对象。
 
-```
+```nasm
 ➜  src git:(master) ✗ go tool objdump m12 | grep -A 40 "main.main"
 TEXT main.main(SB) /Users/zhangshaozhi/data/go/go.test/src/main.go
   main.go:7		0x104ea20		65488b0c2530000000	MOVQ GS:0x30, CX
@@ -83,11 +94,13 @@ TEXT main.main(SB) /Users/zhangshaozhi/data/go/go.test/src/main.go
   :-1			0x104ea9f		cc			INT $0x3
 ```
 
+&nbsp;
+
 #### Go1.13 反汇编
 
 通过反汇编可以看出，Go1.13版本defer通过deferprocStack定义一个延迟调用对象。
 
-```
+```nasm
 ➜  src git:(master) ✗ go tool objdump m13 | grep -A 40 "main.main"
 TEXT main.main(SB) /Users/zhangshaozhi/data/go/go.test/src/main.go
   main.go:7		0x10512e0		65488b0c2530000000	MOVQ GS:0x30, CX
@@ -125,47 +138,47 @@ TEXT main.main(SB) /Users/zhangshaozhi/data/go/go.test/src/main.go
 
 通过反汇编结果可以看出，go1.13对defer 创建延迟函数进行了优化。
 
-
+&nbsp;
 
 ## defer源码剖析
 
 ### SSA对Defer处理
 
-```
+```go
 // src/cmd/compile/internal/gc/ssa.go
 
 func (s *state) stmt(n *Node) {
-	// ...
-	
-	switch n.Op {
-	case ODEFER:
-		d := callDefer
-		
-		// 如果defer 延迟函数没有发生逃逸，则内存分配在Stack上
-		if n.Esc == EscNever {
-			d = callDeferStack
-		}
-		s.call(n.Left, d）
-	}
-	
-	// ...
+// ...
+
+  switch n.Op {
+  case ODEFER:
+    d := callDefer
+
+    // 如果defer 延迟函数没有发生逃逸，则内存分配在Stack上
+    if n.Esc == EscNever {
+      d = callDeferStack
+    }
+    s.call(n.Left, d）
+}
+
+// ...
 }
 ```
 
 * state.call 函数调用
 
-```
+```go
 func (s *state) call(n *Node, k callKind) *ssa.Value {
-	if k == callDeferStack {
-		// ....
-		
-		// 使用指向_defer记录的指针调用deferprocStack
-		arg0 := s.constOffPtrSP(types.Types[TUINTPTR], Ctxt.FixedFrameSize())
-		s.store(types.Types[TUINTPTR], arg0, addr)
-		call = s.newValue1A(ssa.OpStaticCall, types.TypeMem, deferprocStack, s.mem())
-		
-		// ...
-	}
+  if k == callDeferStack {
+    // ....
+
+    // 使用指向_defer记录的指针调用deferprocStack
+    arg0 := s.constOffPtrSP(types.Types[TUINTPTR], Ctxt.FixedFrameSize())
+    s.store(types.Types[TUINTPTR], arg0, addr)
+    call = s.newValue1A(ssa.OpStaticCall, types.TypeMem, deferprocStack, s.mem())
+    
+    // ...
+  }
 }
 ```
 
@@ -173,27 +186,27 @@ func (s *state) call(n *Node, k callKind) *ssa.Value {
 
 deerprocStack函数主要将_defer记录压入到stack上,而非heap上。等待函数退出时,从队列拿出defer延迟函数进行调用。
 
-```
+```go
 // 1. 将defer记录压入队列，该队列内存分配在stack上
 // 2. defer记录的size和fn必须被初始化
 func deferprocStack(d *_defer) {
-	gp := getg()
+  gp := getg()
 
-	d.started = false
-	d.heap = false
-	d.sp = getcallersp()
-	d.pc = getcallerpc()
+  d.started = false
+  d.heap = false
+  d.sp = getcallersp()
+  d.pc = getcallerpc()
 
-	// 下面代码实现如下功能:
-	//   d.panic = nil
-	//   d.link = gp._defer
-	//   gp._defer = d
-	*(*uintptr)(unsafe.Pointer(&d._panic)) = 0
-	*(*uintptr)(unsafe.Pointer(&d.link)) = uintptr(unsafe.Pointer(gp._defer))
-	*(*uintptr)(unsafe.Pointer(&gp._defer)) = uintptr(unsafe.Pointer(d))
+  // 下面代码实现如下功能:
+  //   d.panic = nil
+  //   d.link = gp._defer
+  //   gp._defer = d
+  *(*uintptr)(unsafe.Pointer(&d._panic)) = 0
+  *(*uintptr)(unsafe.Pointer(&d.link)) = uintptr(unsafe.Pointer(gp._defer))
+  *(*uintptr)(unsafe.Pointer(&gp._defer)) = uintptr(unsafe.Pointer(d))
 
-	return0()
-	// No code can go here - the C return register has
-	// been set and must not be clobbered.
+  return0()
+  // No code can go here - the C return register has
+  // been set and must not be clobbered.
 }
 ```

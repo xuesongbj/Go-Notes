@@ -13,7 +13,7 @@ Go语言中编译器将panic翻译成gopanic函数进行调用。将panic放到G
 
 ### Panic 数据结构
 
-```
+```go
 // _ panic 保存在当前调用堆栈上
 type _panic struct {
      argp      unsafe.Pointer // 最顶层延迟函数调用的参数指针
@@ -26,7 +26,7 @@ type _panic struct {
 
 ### gopanic实现
 
-```
+```go
 func gopanic(e interface{}) {
      gp := getg()
 

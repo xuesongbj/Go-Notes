@@ -4,7 +4,8 @@
 ## Malloc初始化
 
 ### Mallocinit
-```
+
+```go
 func mallocinit() {
 	// 初始化规格对照表
 	testdefersizes()
