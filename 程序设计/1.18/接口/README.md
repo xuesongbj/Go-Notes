@@ -138,3 +138,212 @@ func main() {
     println(s.String())  // 100
 }
 ```
+
+&nbsp;
+
+## 空值判断
+
+接口变量默认值 `nil`。如实现接口的类型支持，可做相等运算。
+
+```go
+func main() {
+    var t1, t2 interface{}
+    println(t1 == nil, t1 == t2)
+    
+    t1, t2 = 100, 100
+    println(t1 == t2)
+    
+    // t1, t2 = map[string]int{}, map[string]int{}
+    // println(t1 == t2)
+    //        ~~~~~~~~ panic: comparing uncomparable type map
+}
+```
+
+&nbsp;
+
+接口内部由两个字段组成：**类型** 和 **值**。</br>
+
+只有两个字段都为 `nil` 时，接口才等于 `nil`。可利用反射完善判断结果。
+
+> 不能直接以指针判断 `data` 字段，因为编译器可能将其指向 `runtime.zerobase` 或 `zeroVal` 全局变量。
+
+```go
+// runtime/runtime2.go
+
+type iface struct {
+    tab  *itab
+    data unsafe.Pointer
+}
+
+type eface struct {       // interface{}
+    _type *_type
+    data  unsafe.Pointer
+}
+```
+
+```go
+func main() {
+    var d *Data
+    var t Tester = d   // type != nil
+    
+    println(t == nil)  // false
+    println(t == nil || reflect.ValueOf(t).IsNil()) // true
+}
+```
+
+```go
+import "reflect"
+
+func main() {
+    var t1 interface{}
+    var t2 interface{} = ([]int)(nil)  // type != nil
+
+    println(t1 == nil)  // true
+    println(t2 == nil)  // false
+
+    println(t1 == nil || reflect.ValueOf(t1).IsNil())  // true
+    println(t2 == nil || reflect.ValueOf(t2).IsNil())  // true
+}
+```
+
+&nbsp;
+
+## 匿名嵌入
+
+像匿名字段那样，嵌入其他接口。</br>
+
+目标类型方法集中，必须全部方法实现，包括嵌入接口。</br>
+
+* 嵌入相当于导入方法声明。(非继承)
+* 不能嵌入自身或循环嵌入。
+* 鼓励小接口嵌入组合。
+
+&nbsp;
+
+可以有相同签名(方法名、参数列表和返回值，不包括参数名)的方法声明。</br>
+即便多个嵌入接口有相同声明亦是如此，因为最终方法集里相同声明仅有一个。
+
+```go
+type Aer interface {
+    String(x string) string
+}
+
+// -------------------------
+
+type Stringer interface {
+    String(string) string
+}
+
+// -------------------------
+
+type Tester interface {
+    Aer
+    Stringer                     // 多个嵌入接口有相同声明。
+
+    Test()
+    String(s string) string      // 签名相同（参数名不同）。
+
+    // String() string           // 签名不同。
+    // ~~~~~~ duplicate method
+}
+```
+
+&nbsp;
+
+## 类型转换
+
+超集接口(即便非嵌入)可隐式转换为子集，反之不行。
+
+```go
+type Stringer interface {
+    String(string) string
+}
+
+// -------------------------
+
+type Tester interface {
+    // Stringer
+
+    Test()
+    String(string) string
+}
+
+// -------------------------
+
+type Data struct{}
+
+func (*Data) Test() {}
+func  (Data) String(s string) string { return "test:" + s }
+
+// -------------------------
+
+func main() {
+    var t Tester = &Data{}
+
+    var s Stringer = t
+    s.String("abc")
+
+    // var t2 Tester = s
+    //                 ~ Stringer does not implement Tester
+    
+    // t2 := Tester(s)
+    //              ~ Stringer does not implement Tester    
+}
+```
+
+&nbsp;
+
+以类型推断将接口还原为原始类型，或判断是否实现了某个更具体的接口类型。
+
+```go
+func main() {
+    var t Tester = &Data{}
+
+    var s Stringer = t
+    s.String("abc")
+
+    // 原始类型。
+    d, ok := s.(*Data)
+    fmt.Println(d, ok)          // &{} true
+
+    // 其他接口。
+    t2, ok := s.(Stringer)
+    fmt.Println(t2, ok)         // &{} true
+
+    // 和 fmt.Stringer 方法签名不同。
+    // 如不用 ok-idiom，失败时 panic!
+    t3, ok := s.(fmt.Stringer)
+    fmt.Println(t3, ok)         // <nil> false
+}
+```
+
+还可用 `switch` 语句在多种类型间做出推断匹配，如此空接口就有更多发挥空间。
+
+* 未使用变量视为错误。
+* 不支持 `fallthrough`。
+
+```go
+func main() {
+    var i interface{} = &Data{}
+
+    switch v := i.(type) {
+    case nil: 
+    case *int:
+    case func()string:
+    case *Data: fmt.Println(v)
+    case Tester: fmt.Println(v)
+    default:
+    }
+}
+```
+
+```go
+func main() {
+    var i interface{} = &Data{}
+
+    switch v := i.(type) {   // v declared but not used
+    case *Data: fallthrough  // fallthrough statement out of place
+    default:
+    }
+}
+```
