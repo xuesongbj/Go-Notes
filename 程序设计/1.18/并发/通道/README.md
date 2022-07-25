@@ -87,3 +87,132 @@ func main() {
     println(a, unsafe.Sizeof(a))  // 0xc..., 8
 }
 ```
+
+&nbsp;
+
+## 关闭
+
+对于 `closed` 或 `nil` 通道，规则如下：
+
+* 无论收发，`nil` 通道都会阻塞。
+* 不能关闭 `nil` 通道。
+
+&nbsp;
+
+* 重复关闭通道，引发 `panic` ！
+
+&nbsp;
+
+* 向已关闭通道发送数据，引发 `panic` ！
+* 从已关闭通道接收数据，返回缓冲数据或零值。
+
+&nbsp;
+
+没有判断通道是否已被关闭的直接方法，只能透过收发模式获知。
+
+```go
+func main() {
+    c := make(chan int)
+    close(c)
+
+    // close(c)
+    // ~~~~~ panic: close of closed channel
+    
+    // 不会阻塞，返回零值。
+    
+    println(<- c) // 0
+    println(<- c) // 0
+}
+```
+
+&nbsp;
+
+为避免重复关闭，可包装 `close` 函数。</br>
+也可以类似方式封装 `send`、`recv` 操作。</br>
+
+&nbsp;
+
+```go
+func closechan[T any](c chan T) {
+    defer func(){
+        recover()
+    }()
+
+    close(c)
+}
+
+func main() {
+    c := make(chan int, 2)
+
+    closechan(c)
+    closechan(c)
+}
+```
+
+&nbsp;
+
+保留关闭状态。注意，为并发安全，关闭和获取关闭状态应保持同步。
+
+> 可使用 `sync.RWMutex`、`sync.Once` 优化设计。
+
+```go
+type Queue[T any] struct {
+    sync.Mutex
+
+    ch     chan T
+    cap    int
+    closed bool
+}
+
+func NewQueue[T any](cap int) *Queue[T] {
+    return &Queue[T]{
+        ch: make(chan T, cap),
+    }
+}
+
+func (q *Queue[T]) Close() {
+    q.Lock()
+    defer q.Unlock()
+
+    if !q.closed {
+        close(q.ch)
+        q.closed = true
+    }
+}
+
+func (q *Queue[T]) IsClosed() bool {
+    q.Lock()
+    defer q.Unlock()
+
+    return q.closed
+}
+
+// ---------------------------------
+
+func main() {
+    var wg sync.WaitGroup
+    q := NewQueue[int](3)
+
+    for i := 0; i < 10; i++ {
+        wg.Add(1)
+    
+        go func() {
+            defer wg.Done()
+            defer q.Close()
+            println(q.IsClosed())
+        }()
+    }
+
+    wg.Wait()
+}
+```
+
+&nbsp;
+
+利用 `nil` 通道阻止退出。
+
+```go
+func main() {
+    <-(chan struct{})(nil)    // select{}
+}
+```
