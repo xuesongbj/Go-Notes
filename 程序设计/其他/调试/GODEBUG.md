@@ -118,3 +118,24 @@ SCHED 4019ms: gomaxprocs=2 idleprocs=2 threads=9 spinningthreads=0 idlethreads=6
 
 > 使用 `GODEBUG=schedtrace=1000, scheddetail=1` 可输出详细信息。
 
+&nbsp;
+
+## 内存释放
+
+内存分配器物理内存释放统计。
+
+```bash
+$ GODEBUG=scavtrace=1 ./test
+
+scav 0  0 KiB work, 5648 KiB total, 2% util
+scav 1 40 KiB work, 5656 KiB total, 2% util
+scav 2 32 KiB work, 5656 KiB total, 2% util
+scav 3 32 KiB work, 5656 KiB total, 2% util
+-------------------------------------------
+     1 2            3               4
+```
+
+* `1`：释放次数。
+* `2`：此次释放数量。
+* `3`：总计释放数量。(减去重新分配)
+* `4`：未释放内存中，正在使用部分占比。(`inuse/rss`)
