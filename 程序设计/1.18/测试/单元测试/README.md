@@ -327,3 +327,192 @@ root@8d75790f92f5:~/go/david# go clean -cache -testcache; go test -v -count 2 -r
 PASS
 ok      david   20.009s
 ```
+
+&nbsp;
+
+## 内部实现
+
+每个测试函数都在独立 `goroutine` 内运行。 </br>
+正常情况下，执行器会阻塞，等待 `test goroutine` 结束。
+
+```go
+// src/testing/testing.go
+
+func runTests(...) {
+    for _, test := range tests {
+        t.Run(test.Name, test.F)    // 串行
+    }
+}
+
+func (t *T) Run(...) { 
+    go tRunner(t, f) 
+    if !<-t.signal { runtime.Goexit() } 
+}
+
+func tRunner(t *T, fn func(t *T)) {
+    signal := true
+    defer func() {
+        t.signal <- signal
+    }()
+    
+    defer func() {
+        t.runCleanup()
+    }() 
+    
+    fn(t)
+}
+```
+
+&nbsp;
+
+调用 `t.Parallel`, 该方法会立即发回信号，让外部阻塞(`run`) 结束，继续下一个测试。</br>
+
+自身阻塞，等待串行测试结束后发回信息，恢复执行。
+
+&nbsp;
+
+```go
+func (t *T) Parallel() {
+    t.chatty.Updatef(t.name, "=== PAUSE %s\n", t.name)
+    
+    t.signal <- true // Release calling test.
+    t.context.waitParallel()
+
+    t.chatty.Updatef(t.name, "=== CONT %s\n", t.name)
+}
+```
+
+&nbsp;
+
+## 助手
+
+将调用 `Helper` 的函数标记为测试助手。</br>
+
+输出测试信息时跳过助手函数，直接显示测试函数文件名、行号。 </br>
+
+* 直接在测试函数中调用无效。
+* 测试助手可用作断言。
+
+&nbsp;
+
+```go
+package main
+
+import (
+    "testing"
+)
+
+func assert(t *testing.T, b bool) {
+    t.Helper()
+
+    if !b { t.Fatal("assert fatal") }
+}
+
+func TestA(t *testing.T) {
+    assert(t, false)
+}
+```
+
+```bash
+root@8d75790f92f5:~/go/david# go test -v -run "A"
+=== RUN   TestA
+    main_test.go:14: assert fatal
+--- FAIL: TestA (0.00s)
+FAIL
+exit status 1
+FAIL    david   0.007s
+```
+
+&nbsp;
+
+## 清理
+
+为测试函数注册清理函数，在测试结束时执行。</br>
+
+* 如注册多个，则按FILO顺序执行。
+* 即便发生 `panic`， 也能确保清理函数执行。
+
+```go
+package main
+
+import (
+    "testing"
+)
+
+func TestA(t *testing.T) {
+    t.Cleanup(func() { println("1 cleanup.")})
+    t.Cleanup(func() { println("2 cleanup.")})
+    t.Cleanup(func() { println("3 cleanup.")})
+
+    t.Log("body.")
+}
+```
+
+```bash
+root@8d75790f92f5:~/go/david# go test -v -run "A"
+=== RUN   TestA
+    main_test.go:12: body.
+3 cleanup.
+2 cleanup.
+1 cleanup.
+--- PASS: TestA (0.00s)
+PASS
+ok      david   0.003s
+```
+
+&nbsp;
+
+和 `defer` 的区别：即便在其他函数内注册，也会等测试结束后再执行。
+
+```go
+package main
+
+import (
+    "testing"
+)
+
+func TestA(t *testing.T) {
+    func() {
+        t.Cleanup(func() {
+            println("cleanup.")
+        })
+    }()
+
+    func() {
+        defer println("defer.")
+    }()
+
+    t.Log("body.")
+}
+```
+
+```bash
+root@8d75790f92f5:~/go/david# go test -v -run "A"
+=== RUN   TestA
+defer.
+    main_test.go:18: body.
+cleanup.
+--- PASS: TestA (0.00s)
+PASS
+ok      david   0.003s
+```
+
+可用来写 `Helper` 函数。
+
+```go
+func newDatabase(t *testing.T) *DB {
+    t.Helper()
+    
+    d := Database.Open()
+    t.Cleanup(func(){
+        d.close()
+    })
+    
+    return &d
+}
+
+func TestSelect(t *testing.T) {
+    db = newDatabase(t)
+    ...
+}
+```
